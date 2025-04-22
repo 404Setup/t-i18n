@@ -1,0 +1,1 @@
+rootProject.name = "t-i18n"
