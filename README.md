@@ -45,10 +45,10 @@ dependencies {
 ### Additional Installation
 You need to manually install the dependencies of TI18N according to your requirements.
 
-#### Use json
+#### Use JSON as input
 `compileOnly("com.google.code.gson:gson:2.13.0")`
 
-#### Use yaml
+#### Use YAML as input
 `compileOnly("org.yaml:snakeyaml:2.4")`
 
 or
@@ -59,14 +59,14 @@ If you use Spigot or its forks, you can choose not to install any
 adapter dependencies and choose `BukkitYAML` when selecting the 
 adapter.
 
-#### Use Kyori
+#### Use Kyori as Output
 If you use Paper or its forks, these dependencies are not required.
 
 `compileOnly("net.kyori:adventure-api:4.20.0")`
 
 `compileOnly("net.kyori:adventure-text-minimessage:4.20.0")`
 
-#### Use BaseComponent
+#### Use BaseComponent as Output
 It is only applicable when using BungeeCord.
 
 ## License
