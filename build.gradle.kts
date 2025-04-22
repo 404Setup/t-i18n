@@ -7,12 +7,17 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    maven("https://oss.sonatype.org/content/groups/public/")
+    maven("https://oss.sonatype.org/content/repositories/snapshots/")
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
     maven("https://jitpack.io")
 }
 
 dependencies {
     compileOnly("org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT")
+    compileOnly("net.md-5:bungeecord-api:1.18-R0.1-SNAPSHOT")
+    compileOnly("net.kyori:adventure-api:4.20.0")
+    compileOnly("net.kyori:adventure-text-minimessage:4.20.0")
 
     compileOnly("com.github.Carleslc.Simple-YAML:Simple-Yaml:1.8.4")
     compileOnly("org.yaml:snakeyaml:2.4")

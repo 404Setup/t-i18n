@@ -100,9 +100,7 @@ public enum I18n {
                     };
                     Map<String, String> jsonMap = gson.fromJson(reader, typeToken.getType());
 
-                    if (jsonMap != null) {
-                        result.putAll(jsonMap);
-                    }
+                    if (jsonMap != null) result.putAll(jsonMap);
                 } else {
                     return null;
                 }
@@ -123,11 +121,10 @@ public enum I18n {
             if (value instanceof Map) {
                 flattenYaml((Map<String, Object>) value, key, result);
             } else {
-                result.put(key, value != null ? value.toString() : "");
+                if (value != null) result.put(key, value.toString());
             }
         }
     }
-
 
     private static @NotNull String getBasePath(@Nullable String namespace, @NotNull Locale locale) {
         return namespace != null ? namespace + "/" + locale : locale.toString();
@@ -135,16 +132,13 @@ public enum I18n {
 
     private static @Nullable InputStream getYAMLStream(Class<?> clazz, String basePath) {
         InputStream inputStream = clazz.getResourceAsStream(basePath + ".yml");
-        if (inputStream == null) {
-            inputStream = clazz.getResourceAsStream(basePath + ".yaml");
-        }
+        if (inputStream == null) inputStream = clazz.getResourceAsStream(basePath + ".yaml");
         return inputStream;
     }
 
     private static @Nullable InputStream getJsonStream(Class<?> clazz, String basePath) {
         return clazz.getResourceAsStream(basePath + ".json");
     }
-
 
     abstract @Nullable Map<String, String> load(Class<?> clazz, String namespace, Locale locale);
 }
