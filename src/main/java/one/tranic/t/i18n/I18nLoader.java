@@ -3,6 +3,7 @@ package one.tranic.t.i18n;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -41,7 +42,7 @@ public class I18nLoader {
                 "languageSize=" + language.size() +
                 ", namespace='" + namespace + '\'' +
                 ", clazz=" + clazz +
-                ", locale=" + locale +
+                ", locale=" + locale.getLanguage() +
                 ", adaptar=" + adaptar +
                 '}';
     }
@@ -76,21 +77,14 @@ public class I18nLoader {
     }
 
     /**
-     * Updates the internal language map with localized translations retrieved using the current
-     * class, namespace, and locale settings.
-     * <p>
-     * If a valid language map is loaded, the existing language map is cleared and replaced with the new data.
-     * <p>
-     * This method relies on an external adapter to load the language map.
-     * If no language map is retrieved (i.e., the adapter returns null), no changes are made
-     * to the internal language map.
+     * Updates the internal language map with localized strings for the specified class, namespace, and locale.
+     *
+     * @throws IOException if an I/O error occurs during loading of the localized strings.
      */
-    public void update() {
+    public void update() throws IOException {
         var lang = adaptar.load(clazz, namespace, locale);
-        if (lang != null) {
-            language.clear();
-            language.putAll(lang);
-        }
+        language.clear();
+        language.putAll(lang);
     }
 
     /**

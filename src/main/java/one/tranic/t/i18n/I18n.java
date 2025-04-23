@@ -6,6 +6,8 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
@@ -15,8 +17,8 @@ import java.util.Map;
 public enum I18n {
     BukkitYAML {
         @Override
-        @Nullable
-        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) {
+        @NotNull
+        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
             Map<String, String> result = new HashMap<>();
 
             try (InputStream inputStream = getYAMLStream(clazz, namespace, locale)) {
@@ -26,12 +28,12 @@ public enum I18n {
                         yaml.load(reader);
                         Map<String, Object> yamlMap = yaml.getValues(false);
                         flattenYaml(yamlMap, "", result);
+                    } catch (Exception e) {
+                        throw new IOException("Failed to load YAML file for " + clazz.getName() + " in " + locale.getLanguage(), e);
                     }
                 } else {
-                    return null;
+                    throw new IOException("Failed to load YAML file for " + clazz.getName() + " in " + locale.getLanguage());
                 }
-            } catch (IOException | org.bukkit.configuration.InvalidConfigurationException e) {
-                e.printStackTrace();
             }
 
             return result;
@@ -39,8 +41,8 @@ public enum I18n {
     },
     SimpleYAML {
         @Override
-        @Nullable
-        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) {
+        @NotNull
+        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
             Map<String, String> result = new HashMap<>();
 
             try (InputStream inputStream = getYAMLStream(clazz, namespace, locale)) {
@@ -50,10 +52,8 @@ public enum I18n {
                     Map<String, Object> yamlMap = yaml.getMapValues(false);
                     flattenYaml(yamlMap, "", result);
                 } else {
-                    return null;
+                    throw new IOException("Failed to load YAML file for " + clazz.getName() + " in " + locale.getLanguage());
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
 
             return result;
@@ -61,8 +61,8 @@ public enum I18n {
     },
     SnakeYAML {
         @Override
-        @Nullable
-        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) {
+        @NotNull
+        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
             Map<String, String> result = new HashMap<>();
 
             try (InputStream inputStream = getYAMLStream(clazz, namespace, locale)) {
@@ -71,10 +71,8 @@ public enum I18n {
                     Map<String, Object> yamlMap = yaml.load(inputStream);
                     flattenYaml(yamlMap, "", result);
                 } else {
-                    return null;
+                    throw new IOException("Failed to load YAML file for " + clazz.getName() + " in " + locale.getLanguage());
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
 
             return result;
@@ -84,8 +82,8 @@ public enum I18n {
         private final com.google.gson.Gson gson = new com.google.gson.Gson();
 
         @Override
-        @Nullable
-        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) {
+        @NotNull
+        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
             Map<String, String> result = new HashMap<>();
 
             try (InputStream inputStream = getJsonStream(clazz, namespace, locale)) {
@@ -98,10 +96,8 @@ public enum I18n {
 
                     if (jsonMap != null) result.putAll(jsonMap);
                 } else {
-                    return null;
+                    throw new IOException("Failed to load JSON file for " + clazz.getName() + " in " + locale.getLanguage());
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
 
             return result;
@@ -123,13 +119,13 @@ public enum I18n {
     }
 
     private static @NotNull String getBasePath(@Nullable String namespace, @NotNull Locale locale) {
-        return namespace != null ? namespace + "/" + locale : locale.toString();
+        return namespace != null ? namespace + "/" + locale.getLanguage() : locale.getLanguage();
     }
 
     private static @Nullable InputStream getYAMLStream(Class<?> clazz, @Nullable String namespace, @NotNull Locale locale) {
         var basePath = getBasePath(namespace, locale);
 
-        InputStream inputStream = clazz.getResourceAsStream(basePath + ".yml");
+        InputStream inputStream = getResource(clazz, basePath + ".yml");
         if (inputStream == null) inputStream = clazz.getResourceAsStream(basePath + ".yaml");
 
         if (inputStream == null && !locale.equals(Locale.ENGLISH))
@@ -140,11 +136,25 @@ public enum I18n {
     private static @Nullable InputStream getJsonStream(Class<?> clazz, @Nullable String namespace, @NotNull Locale locale) {
         var basePath = getBasePath(namespace, locale);
 
-        var inputStream = clazz.getResourceAsStream(basePath + ".json");
+        var inputStream = getResource(clazz, basePath + ".json");
         if (inputStream == null && !locale.equals(Locale.ENGLISH))
             return getJsonStream(clazz, namespace, Locale.ENGLISH);
         return inputStream;
     }
 
-    abstract @Nullable Map<String, String> load(Class<?> clazz, String namespace, Locale locale);
+    private static InputStream getResource(Class<?> clazz, @NotNull String filename) {
+        try {
+            URL url = clazz.getClassLoader().getResource(filename);
+
+            if (url == null) return null;
+
+            URLConnection connection = url.openConnection();
+            connection.setUseCaches(false);
+            return connection.getInputStream();
+        } catch (IOException ex) {
+            return null;
+        }
+    }
+
+    abstract @NotNull Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException;
 }
