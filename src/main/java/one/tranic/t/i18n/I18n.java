@@ -18,9 +18,8 @@ public enum I18n {
         @Nullable
         Map<String, String> load(Class<?> clazz, String namespace, Locale locale) {
             Map<String, String> result = new HashMap<>();
-            String basePath = getBasePath(namespace, locale);
 
-            try (InputStream inputStream = getYAMLStream(clazz, basePath)) {
+            try (InputStream inputStream = getYAMLStream(clazz, namespace, locale)) {
                 if (inputStream != null) {
                     org.bukkit.configuration.file.YamlConfiguration yaml = new org.bukkit.configuration.file.YamlConfiguration();
                     try (InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
@@ -43,9 +42,8 @@ public enum I18n {
         @Nullable
         Map<String, String> load(Class<?> clazz, String namespace, Locale locale) {
             Map<String, String> result = new HashMap<>();
-            String basePath = getBasePath(namespace, locale);
 
-            try (InputStream inputStream = getYAMLStream(clazz, basePath)) {
+            try (InputStream inputStream = getYAMLStream(clazz, namespace, locale)) {
                 if (inputStream != null) {
                     org.simpleyaml.configuration.file.YamlConfiguration yaml = new org.simpleyaml.configuration.file.YamlConfiguration();
                     yaml.load(inputStream);
@@ -66,9 +64,8 @@ public enum I18n {
         @Nullable
         Map<String, String> load(Class<?> clazz, String namespace, Locale locale) {
             Map<String, String> result = new HashMap<>();
-            String basePath = getBasePath(namespace, locale);
 
-            try (InputStream inputStream = getYAMLStream(clazz, basePath)) {
+            try (InputStream inputStream = getYAMLStream(clazz, namespace, locale)) {
                 if (inputStream != null) {
                     org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
                     Map<String, Object> yamlMap = yaml.load(inputStream);
@@ -90,9 +87,8 @@ public enum I18n {
         @Nullable
         Map<String, String> load(Class<?> clazz, String namespace, Locale locale) {
             Map<String, String> result = new HashMap<>();
-            String filePath = getBasePath(namespace, locale);
 
-            try (InputStream inputStream = getJsonStream(clazz, filePath)) {
+            try (InputStream inputStream = getJsonStream(clazz, namespace, locale)) {
                 if (inputStream != null) {
                     InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
 
@@ -130,14 +126,24 @@ public enum I18n {
         return namespace != null ? namespace + "/" + locale : locale.toString();
     }
 
-    private static @Nullable InputStream getYAMLStream(Class<?> clazz, String basePath) {
+    private static @Nullable InputStream getYAMLStream(Class<?> clazz, @Nullable String namespace, @NotNull Locale locale) {
+        var basePath = getBasePath(namespace, locale);
+
         InputStream inputStream = clazz.getResourceAsStream(basePath + ".yml");
         if (inputStream == null) inputStream = clazz.getResourceAsStream(basePath + ".yaml");
+
+        if (inputStream == null && !locale.equals(Locale.ENGLISH))
+            return getYAMLStream(clazz, namespace, Locale.ENGLISH);
         return inputStream;
     }
 
-    private static @Nullable InputStream getJsonStream(Class<?> clazz, String basePath) {
-        return clazz.getResourceAsStream(basePath + ".json");
+    private static @Nullable InputStream getJsonStream(Class<?> clazz, @Nullable String namespace, @NotNull Locale locale) {
+        var basePath = getBasePath(namespace, locale);
+
+        var inputStream = clazz.getResourceAsStream(basePath + ".json");
+        if (inputStream == null && !locale.equals(Locale.ENGLISH))
+            return getJsonStream(clazz, namespace, Locale.ENGLISH);
+        return inputStream;
     }
 
     abstract @Nullable Map<String, String> load(Class<?> clazz, String namespace, Locale locale);

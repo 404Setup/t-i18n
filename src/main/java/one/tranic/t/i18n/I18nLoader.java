@@ -25,7 +25,7 @@ public class I18nLoader {
     I18n adaptar;
 
     public I18nLoader(@Nullable Class<?> clazz, @NotNull String namespace) {
-        this(clazz, namespace, Locale.getDefault());
+        this(clazz, namespace, Locale.ENGLISH);
     }
 
     public I18nLoader(@Nullable Class<?> clazz, @NotNull String namespace, @NotNull Locale locale) {
@@ -33,6 +33,17 @@ public class I18nLoader {
         this.locale = locale;
         this.namespace = namespace;
         this.language = new HashMap<>();
+    }
+
+    @Override
+    public String toString() {
+        return "I18nLoader{" +
+                "languageSize=" + language.size() +
+                ", namespace='" + namespace + '\'' +
+                ", clazz=" + clazz +
+                ", locale=" + locale +
+                ", adaptar=" + adaptar +
+                '}';
     }
 
     /**
