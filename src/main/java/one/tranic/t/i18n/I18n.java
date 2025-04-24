@@ -19,63 +19,49 @@ public enum I18n {
         @Override
         @NotNull
         Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            Map<String, String> result = new HashMap<>();
-
             try (InputStream inputStream = getYAMLStream(clazz, namespace, locale)) {
-                if (inputStream != null) {
-                    org.bukkit.configuration.file.YamlConfiguration yaml = new org.bukkit.configuration.file.YamlConfiguration();
-                    try (InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
-                        yaml.load(reader);
-                        Map<String, Object> yamlMap = yaml.getValues(false);
-                        flattenYaml(yamlMap, "", result);
-                    } catch (Exception e) {
-                        throw new IOException("Failed to load YAML file for " + clazz.getName() + " in " + locale.getLanguage(), e);
-                    }
-                } else {
-                    throw new IOException("Failed to load YAML file for " + clazz.getName() + " in " + locale.getLanguage());
+                org.bukkit.configuration.file.YamlConfiguration yaml = new org.bukkit.configuration.file.YamlConfiguration();
+                try (InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+                    yaml.load(reader);
+
+                    Map<String, Object> yamlMap = yaml.getValues(false);
+                    Map<String, String> result = new HashMap<>();
+
+                    flattenYaml(yamlMap, "", result);
+                    return result;
+                } catch (Exception e) {
+                    throw new IOException("Failed to load YAML file for " + clazz.getName() + " in " + locale.getLanguage(), e);
                 }
             }
-
-            return result;
         }
     },
     SimpleYAML {
         @Override
         @NotNull
         Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            Map<String, String> result = new HashMap<>();
-
             try (InputStream inputStream = getYAMLStream(clazz, namespace, locale)) {
-                if (inputStream != null) {
-                    org.simpleyaml.configuration.file.YamlConfiguration yaml = new org.simpleyaml.configuration.file.YamlConfiguration();
-                    yaml.load(inputStream);
-                    Map<String, Object> yamlMap = yaml.getMapValues(false);
-                    flattenYaml(yamlMap, "", result);
-                } else {
-                    throw new IOException("Failed to load YAML file for " + clazz.getName() + " in " + locale.getLanguage());
-                }
-            }
+                org.simpleyaml.configuration.file.YamlConfiguration yaml = new org.simpleyaml.configuration.file.YamlConfiguration();
+                yaml.load(inputStream);
+                Map<String, Object> yamlMap = yaml.getMapValues(false);
 
-            return result;
+                Map<String, String> result = new HashMap<>();
+                flattenYaml(yamlMap, "", result);
+                return result;
+            }
         }
     },
     SnakeYAML {
         @Override
         @NotNull
         Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            Map<String, String> result = new HashMap<>();
-
             try (InputStream inputStream = getYAMLStream(clazz, namespace, locale)) {
-                if (inputStream != null) {
-                    org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
-                    Map<String, Object> yamlMap = yaml.load(inputStream);
-                    flattenYaml(yamlMap, "", result);
-                } else {
-                    throw new IOException("Failed to load YAML file for " + clazz.getName() + " in " + locale.getLanguage());
-                }
-            }
+                org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
+                Map<String, Object> yamlMap = yaml.load(inputStream);
+                Map<String, String> result = new HashMap<>();
 
-            return result;
+                flattenYaml(yamlMap, "", result);
+                return result;
+            }
         }
     },
     GSON {
@@ -84,23 +70,17 @@ public enum I18n {
         @Override
         @NotNull
         Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            Map<String, String> result = new HashMap<>();
-
             try (InputStream inputStream = getJsonStream(clazz, namespace, locale)) {
-                if (inputStream != null) {
-                    InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+                InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
 
-                    com.google.gson.reflect.TypeToken<Map<String, String>> typeToken = new com.google.gson.reflect.TypeToken<>() {
-                    };
-                    Map<String, String> jsonMap = gson.fromJson(reader, typeToken.getType());
+                com.google.gson.reflect.TypeToken<Map<String, String>> typeToken = new com.google.gson.reflect.TypeToken<>() {
+                };
+                Map<String, String> jsonMap = gson.fromJson(reader, typeToken.getType());
 
-                    if (jsonMap != null) result.putAll(jsonMap);
-                } else {
-                    throw new IOException("Failed to load JSON file for " + clazz.getName() + " in " + locale.getLanguage());
-                }
+                Map<String, String> result = new HashMap<>();
+                if (jsonMap != null) result.putAll(jsonMap);
+                return result;
             }
-
-            return result;
         }
     };
 
@@ -122,23 +102,31 @@ public enum I18n {
         return namespace != null ? namespace + "/" + locale.getLanguage() : locale.getLanguage();
     }
 
-    private static @Nullable InputStream getYAMLStream(Class<?> clazz, @Nullable String namespace, @NotNull Locale locale) {
+    private static @NotNull InputStream getYAMLStream(Class<?> clazz, @Nullable String namespace, @NotNull Locale locale) throws IOException {
         var basePath = getBasePath(namespace, locale);
 
         InputStream inputStream = getResource(clazz, basePath + ".yml");
         if (inputStream == null) inputStream = clazz.getResourceAsStream(basePath + ".yaml");
 
         if (inputStream == null && !locale.equals(Locale.ENGLISH))
-            return getYAMLStream(clazz, namespace, Locale.ENGLISH);
+            inputStream = getYAMLStream(clazz, namespace, Locale.ENGLISH);
+
+        if (inputStream == null)
+            throw new IOException("Failed to load YAML file for " + clazz.getName() + " in " + locale.getLanguage());
+
         return inputStream;
     }
 
-    private static @Nullable InputStream getJsonStream(Class<?> clazz, @Nullable String namespace, @NotNull Locale locale) {
+    private static @NotNull InputStream getJsonStream(Class<?> clazz, @Nullable String namespace, @NotNull Locale locale) throws IOException {
         var basePath = getBasePath(namespace, locale);
 
         var inputStream = getResource(clazz, basePath + ".json");
         if (inputStream == null && !locale.equals(Locale.ENGLISH))
-            return getJsonStream(clazz, namespace, Locale.ENGLISH);
+            inputStream = getJsonStream(clazz, namespace, Locale.ENGLISH);
+
+        if (inputStream == null)
+            throw new IOException("Failed to load JSON file for " + clazz.getName() + " in " + locale.getLanguage());
+
         return inputStream;
     }
 
