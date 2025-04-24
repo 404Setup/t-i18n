@@ -129,7 +129,7 @@ public enum I18n {
     }
 
     private static @NotNull String getBasePath(@Nullable String namespace, @NotNull Locale locale) {
-        return namespace != null ? namespace + "/" + locale.getLanguage() : locale.getLanguage();
+        return namespace != null ? namespace + "/" + locale : locale.toString();
     }
 
     private static InputStream getResource(Class<?> clazz, @NotNull String filename) {
@@ -174,7 +174,7 @@ public enum I18n {
 
             if (inputStream == null) {
                 throw new IOException("Failed to load " + getFormatName() + " file for "
-                        + clazz.getName() + " in " + locale.getLanguage());
+                        + clazz.getName() + " in " + locale);
             }
 
             try (InputStream is = inputStream) {
