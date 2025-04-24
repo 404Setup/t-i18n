@@ -67,10 +67,6 @@ It is only applicable when using BungeeCord.
 This is not possible for now, you should use String output and wrap it manually, 
 I will provide a separate wrapper to solve this problem later.
 
-#### Use Universal Output
-This is not possible for now, you should use String output and wrap it manually,
-I will provide a separate wrapper to solve this problem later.
-
 ## License
 
 Licensed under the Apache License, Version 2.0 (the "License");
