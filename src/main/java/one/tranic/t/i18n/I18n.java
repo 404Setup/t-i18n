@@ -15,39 +15,26 @@ import java.util.Map;
 
 // TODO: This is for evaluation purposes only and has not been tested.
 public enum I18n {
+    /**
+     * @deprecated Should be replaced with {@link #SnakeYAML}.
+     */
     BukkitYAML {
         @Override
         @NotNull
         Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            try (InputStream inputStream = getYAMLStream(clazz, namespace, locale)) {
-                org.bukkit.configuration.file.YamlConfiguration yaml = new org.bukkit.configuration.file.YamlConfiguration();
-                try (InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
-                    yaml.load(reader);
-
-                    Map<String, Object> yamlMap = yaml.getValues(false);
-                    Map<String, String> result = new HashMap<>();
-
-                    flattenYaml(yamlMap, "", result);
-                    return result;
-                } catch (Exception e) {
-                    throw new IOException("Failed to load YAML file for " + clazz.getName() + " in " + locale.getLanguage(), e);
-                }
-            }
+            return SnakeYAML.load(clazz, namespace, locale);
+            // Same as SimpleYAML
         }
     },
+    /**
+     * @deprecated Should be replaced with {@link #SnakeYAML}.
+     */
     SimpleYAML {
         @Override
         @NotNull
         Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            try (InputStream inputStream = getYAMLStream(clazz, namespace, locale)) {
-                org.simpleyaml.configuration.file.YamlConfiguration yaml = new org.simpleyaml.configuration.file.YamlConfiguration();
-                yaml.load(inputStream);
-                Map<String, Object> yamlMap = yaml.getMapValues(false);
-
-                Map<String, String> result = new HashMap<>();
-                flattenYaml(yamlMap, "", result);
-                return result;
-            }
+            return SnakeYAML.load(clazz, namespace, locale);
+            // SimpleYAML is based on SnakeYaml, so call SnakeYAML load.
         }
     },
     SnakeYAML {

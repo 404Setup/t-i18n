@@ -51,13 +51,7 @@ You need to manually install the dependencies of TI18N according to your require
 #### Use YAML as input
 `compileOnly("org.yaml:snakeyaml:2.4")`
 
-or
-
-`compileOnly("com.github.Carleslc.Simple-YAML:Simple-Yaml:1.8.4")`
-
-If you use Spigot or its forks, you can choose not to install any 
-adapter dependencies and choose `BukkitYAML` when selecting the 
-adapter.
+If the target environment contains snakeyaml, no installation is necessary.
 
 #### Use Kyori as Output
 If you use Paper or its forks, these dependencies are not required.
@@ -68,6 +62,14 @@ If you use Paper or its forks, these dependencies are not required.
 
 #### Use BaseComponent as Output
 It is only applicable when using BungeeCord.
+
+#### Use Minecraft Component as Output
+This is not possible for now, you should use String output and wrap it manually, 
+I will provide a separate wrapper to solve this problem later.
+
+#### Use Universal Output
+This is not possible for now, you should use String output and wrap it manually,
+I will provide a separate wrapper to solve this problem later.
 
 ## License
 
