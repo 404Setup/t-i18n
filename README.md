@@ -7,7 +7,7 @@ Quick use, consistent behavior i18n wrapper.
 
 ## Feature
 - Lightweight implementation, easy to use
-- Support `json`, `yml/yaml`
+- Support `json`, `yml/yaml`, `properties`
 - Supports multiple output styles, such as `Standard String`, `Kyori Component` and `BungeeCord BaseComponent`
 
 ## Installation
@@ -48,10 +48,15 @@ You need to manually install the dependencies of TI18N according to your require
 #### Use JSON as input
 `compileOnly("com.google.code.gson:gson:2.13.0")`
 
+If the target environment contains gson, no installation is necessary.
+
 #### Use YAML as input
 `compileOnly("org.yaml:snakeyaml:2.4")`
 
 If the target environment contains snakeyaml, no installation is necessary.
+
+#### Use Properties as input
+No additional dependencies required as Properties support is built into the JDK.
 
 #### Use Kyori as Output
 If you use Paper or its forks, these dependencies are not required.

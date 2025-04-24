@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 
 public enum I18n {
     SnakeYAML {
@@ -43,6 +44,22 @@ public enum I18n {
 
                 Map<String, String> result = new HashMap<>();
                 if (jsonMap != null) result.putAll(jsonMap);
+                return result;
+            }
+        }
+    },
+    PROPERTIES {
+        @Override
+        @NotNull
+        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
+            try (InputStream inputStream = getPropertiesStream(clazz, namespace, locale)) {
+                Properties properties = new Properties();
+                properties.load(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+
+                Map<String, String> result = new HashMap<>();
+                for (String key : properties.stringPropertyNames()) {
+                    result.put(key, properties.getProperty(key));
+                }
                 return result;
             }
         }
@@ -90,6 +107,19 @@ public enum I18n {
 
         if (inputStream == null)
             throw new IOException("Failed to load JSON file for " + clazz.getName() + " in " + locale.getLanguage());
+
+        return inputStream;
+    }
+
+    private static @NotNull InputStream getPropertiesStream(Class<?> clazz, @Nullable String namespace, @NotNull Locale locale) throws IOException {
+        var basePath = getBasePath(namespace, locale);
+
+        var inputStream = getResource(clazz, basePath + ".properties");
+        if (inputStream == null && !locale.equals(Locale.ENGLISH))
+            inputStream = getPropertiesStream(clazz, namespace, Locale.ENGLISH);
+
+        if (inputStream == null)
+            throw new IOException("Failed to load Properties file for " + clazz.getName() + " in " + locale.getLanguage());
 
         return inputStream;
     }
