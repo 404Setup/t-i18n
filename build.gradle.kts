@@ -3,14 +3,13 @@ plugins {
 }
 
 group = "one.tranic"
-version = "1.0-SNAPSHOT"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
     maven("https://oss.sonatype.org/content/groups/public/")
     maven("https://oss.sonatype.org/content/repositories/snapshots/")
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
-    maven("https://jitpack.io")
 }
 
 dependencies {
@@ -19,7 +18,6 @@ dependencies {
     compileOnly("net.kyori:adventure-api:4.20.0")
     compileOnly("net.kyori:adventure-text-minimessage:4.20.0")
 
-    compileOnly("com.github.Carleslc.Simple-YAML:Simple-Yaml:1.8.4")
     compileOnly("org.yaml:snakeyaml:2.4")
     compileOnly("com.google.code.gson:gson:2.13.0")
 

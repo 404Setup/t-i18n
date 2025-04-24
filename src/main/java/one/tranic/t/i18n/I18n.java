@@ -13,30 +13,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-// TODO: This is for evaluation purposes only and has not been tested.
 public enum I18n {
-    /**
-     * @deprecated Should be replaced with {@link #SnakeYAML}.
-     */
-    BukkitYAML {
-        @Override
-        @NotNull
-        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            return SnakeYAML.load(clazz, namespace, locale);
-            // Same as SimpleYAML
-        }
-    },
-    /**
-     * @deprecated Should be replaced with {@link #SnakeYAML}.
-     */
-    SimpleYAML {
-        @Override
-        @NotNull
-        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            return SnakeYAML.load(clazz, namespace, locale);
-            // SimpleYAML is based on SnakeYaml, so call SnakeYAML load.
-        }
-    },
     SnakeYAML {
         @Override
         @NotNull
