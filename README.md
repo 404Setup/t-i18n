@@ -7,7 +7,7 @@ Quick use, consistent behavior i18n wrapper.
 
 ## Feature
 - Lightweight implementation, easy to use
-- Support `json`, `yml/yaml`, `properties`
+- Support `json`, `yml/yaml`, `properties`, `xml`
 - Supports multiple output styles, such as `Standard String`, `Kyori Component` and `BungeeCord BaseComponent`
 
 ## Installation
@@ -56,7 +56,10 @@ If the target environment contains gson, no installation is necessary.
 If the target environment contains snakeyaml, no installation is necessary.
 
 #### Use Properties as input
-No additional dependencies required as Properties support is built into the JDK.
+No additional dependencies are required as Properties support is built into the JDK.
+
+#### Use XML as input
+No additional dependencies are required as XML support is built into the JDK.
 
 #### Use Kyori as Output
 If you use Paper or its forks, these dependencies are not required.

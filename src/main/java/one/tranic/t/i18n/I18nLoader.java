@@ -38,13 +38,17 @@ public class I18nLoader {
 
     @Override
     public String toString() {
-        return "I18nLoader{" +
-                "languageSize=" + language.size() +
-                ", namespace='" + namespace + '\'' +
-                ", clazz=" + clazz +
-                ", locale=" + locale.getLanguage() +
-                ", adaptar=" + adaptar +
-                '}';
+        StringBuilder sb = new StringBuilder("I18nLoader{");
+        int size = language.size();
+        if (size < 15)
+            sb.append("language=").append(language).append(", ");
+        sb.append("languageSize=").append(size)
+                .append(", namespace='").append(namespace).append('\'')
+                .append(", clazz=").append(clazz)
+                .append(", locale=").append(locale.getLanguage())
+                .append(", adaptar=").append(adaptar)
+                .append('}');
+        return sb.toString();
     }
 
     /**
