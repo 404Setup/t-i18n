@@ -16,65 +16,114 @@ import java.util.Properties;
 
 public enum I18n {
     SnakeYAML {
-        @Override
-        @NotNull
-        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            try (InputStream inputStream = getYAMLStream(clazz, namespace, locale)) {
+        private final ResourceLoader resourceLoader = new ResourceLoader() {
+            @Override
+            protected String getFileExtension() {
+                return ".yml";
+            }
+
+            @Override
+            protected String getAlternativeFileExtension() {
+                return ".yaml";
+            }
+
+            @Override
+            protected Map<String, String> parseInputStream(InputStream inputStream) throws IOException {
                 org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
                 Map<String, Object> yamlMap = yaml.load(inputStream);
                 Map<String, String> result = new HashMap<>();
-
                 flattenYaml(yamlMap, "", result);
                 return result;
             }
+
+            @Override
+            protected String getFormatName() {
+                return "YAML";
+            }
+        };
+
+        @Override
+        @NotNull
+        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
+            return resourceLoader.load(clazz, namespace, locale);
         }
     },
     GSON {
         private final com.google.gson.Gson gson = new com.google.gson.Gson();
 
-        @Override
-        @NotNull
-        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            try (InputStream inputStream = getJsonStream(clazz, namespace, locale)) {
+        private final ResourceLoader resourceLoader = new ResourceLoader() {
+            @Override
+            protected String getFileExtension() {
+                return ".json";
+            }
+
+            @Override
+            protected Map<String, String> parseInputStream(InputStream inputStream) throws IOException {
                 InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-
-                com.google.gson.reflect.TypeToken<Map<String, String>> typeToken = new com.google.gson.reflect.TypeToken<>() {
-                };
+                com.google.gson.reflect.TypeToken<Map<String, String>> typeToken =
+                        new com.google.gson.reflect.TypeToken<>() {
+                        };
                 Map<String, String> jsonMap = gson.fromJson(reader, typeToken.getType());
-
                 Map<String, String> result = new HashMap<>();
                 if (jsonMap != null) result.putAll(jsonMap);
                 return result;
             }
-        }
-    },
-    PROPERTIES {
+
+            @Override
+            protected String getFormatName() {
+                return "JSON";
+            }
+        };
+
         @Override
         @NotNull
         Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            try (InputStream inputStream = getPropertiesStream(clazz, namespace, locale)) {
+            return resourceLoader.load(clazz, namespace, locale);
+        }
+    },
+    PROPERTIES {
+        private final ResourceLoader resourceLoader = new ResourceLoader() {
+            @Override
+            protected String getFileExtension() {
+                return ".properties";
+            }
+
+            @Override
+            protected Map<String, String> parseInputStream(InputStream inputStream) throws IOException {
                 Properties properties = new Properties();
                 properties.load(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-
                 Map<String, String> result = new HashMap<>();
                 for (String key : properties.stringPropertyNames()) {
                     result.put(key, properties.getProperty(key));
                 }
                 return result;
             }
+
+            @Override
+            protected String getFormatName() {
+                return "Properties";
+            }
+        };
+
+        @Override
+        @NotNull
+        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
+            return resourceLoader.load(clazz, namespace, locale);
         }
     };
 
     @SuppressWarnings("unchecked")
     private static void flattenYaml(Map<String, Object> yamlMap, String prefix, Map<String, String> result) {
+        if (yamlMap == null) return;
+
         for (Map.Entry<String, Object> entry : yamlMap.entrySet()) {
             String key = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
             Object value = entry.getValue();
 
             if (value instanceof Map) {
                 flattenYaml((Map<String, Object>) value, key, result);
-            } else {
-                if (value != null) result.put(key, value.toString());
+            } else if (value != null) {
+                result.put(key, value.toString());
             }
         }
     }
@@ -83,51 +132,9 @@ public enum I18n {
         return namespace != null ? namespace + "/" + locale.getLanguage() : locale.getLanguage();
     }
 
-    private static @NotNull InputStream getYAMLStream(Class<?> clazz, @Nullable String namespace, @NotNull Locale locale) throws IOException {
-        var basePath = getBasePath(namespace, locale);
-
-        InputStream inputStream = getResource(clazz, basePath + ".yml");
-        if (inputStream == null) inputStream = clazz.getResourceAsStream(basePath + ".yaml");
-
-        if (inputStream == null && !locale.equals(Locale.ENGLISH))
-            inputStream = getYAMLStream(clazz, namespace, Locale.ENGLISH);
-
-        if (inputStream == null)
-            throw new IOException("Failed to load YAML file for " + clazz.getName() + " in " + locale.getLanguage());
-
-        return inputStream;
-    }
-
-    private static @NotNull InputStream getJsonStream(Class<?> clazz, @Nullable String namespace, @NotNull Locale locale) throws IOException {
-        var basePath = getBasePath(namespace, locale);
-
-        var inputStream = getResource(clazz, basePath + ".json");
-        if (inputStream == null && !locale.equals(Locale.ENGLISH))
-            inputStream = getJsonStream(clazz, namespace, Locale.ENGLISH);
-
-        if (inputStream == null)
-            throw new IOException("Failed to load JSON file for " + clazz.getName() + " in " + locale.getLanguage());
-
-        return inputStream;
-    }
-
-    private static @NotNull InputStream getPropertiesStream(Class<?> clazz, @Nullable String namespace, @NotNull Locale locale) throws IOException {
-        var basePath = getBasePath(namespace, locale);
-
-        var inputStream = getResource(clazz, basePath + ".properties");
-        if (inputStream == null && !locale.equals(Locale.ENGLISH))
-            inputStream = getPropertiesStream(clazz, namespace, Locale.ENGLISH);
-
-        if (inputStream == null)
-            throw new IOException("Failed to load Properties file for " + clazz.getName() + " in " + locale.getLanguage());
-
-        return inputStream;
-    }
-
     private static InputStream getResource(Class<?> clazz, @NotNull String filename) {
         try {
             URL url = clazz.getClassLoader().getResource(filename);
-
             if (url == null) return null;
 
             URLConnection connection = url.openConnection();
@@ -139,4 +146,40 @@ public enum I18n {
     }
 
     abstract @NotNull Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException;
+
+    private abstract static class ResourceLoader {
+        protected abstract String getFileExtension();
+
+        protected String getAlternativeFileExtension() {
+            return null;
+        }
+
+        protected abstract String getFormatName();
+
+        protected abstract Map<String, String> parseInputStream(InputStream inputStream) throws IOException;
+
+        public Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
+            String basePath = getBasePath(namespace, locale);
+
+            InputStream inputStream = getResource(clazz, basePath + getFileExtension());
+
+            String alternativeExt = getAlternativeFileExtension();
+            if (inputStream == null && alternativeExt != null) {
+                inputStream = getResource(clazz, basePath + alternativeExt);
+            }
+
+            if (inputStream == null && !locale.equals(Locale.ENGLISH)) {
+                return load(clazz, namespace, Locale.ENGLISH);
+            }
+
+            if (inputStream == null) {
+                throw new IOException("Failed to load " + getFormatName() + " file for "
+                        + clazz.getName() + " in " + locale.getLanguage());
+            }
+
+            try (InputStream is = inputStream) {
+                return parseInputStream(is);
+            }
+        }
+    }
 }
