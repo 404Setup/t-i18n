@@ -168,10 +168,6 @@ public enum I18n {
                 inputStream = getResource(clazz, basePath + alternativeExt);
             }
 
-            if (inputStream == null && !locale.equals(Locale.ENGLISH)) {
-                return load(clazz, namespace, Locale.ENGLISH);
-            }
-
             if (inputStream == null) {
                 throw new IOException("Failed to load " + getFormatName() + " file for "
                         + clazz.getName() + " in " + locale);
