@@ -52,14 +52,13 @@ public class I18nLoader {
     }
 
     /**
-     * Resets the state of the I18nLoader instance by clearing the language map
-     * and optionally resetting the locale.
+     * Resets the current state of the language map and assigns a new locale for this instance.
      *
-     * @param resetLocale if true, the locale will be reset to null; if false, the locale will remain unchanged
+     * @param locale the Locale to be set; it can be null to indicate no specific locale
      */
-    public void reset(boolean resetLocale) {
+    public void reset(@Nullable Locale locale) {
         if (language != null) language.clear();
-        if (resetLocale) locale = null;
+        this.locale = locale;
     }
 
     /**
@@ -137,7 +136,7 @@ public class I18nLoader {
      */
     public @NotNull String toBrace(@NotNull String key, @NotNull Object... args) {
         String text = to(key);
-        if (args.length == 0 || key == text) return text;
+        if (args.length == 0 || key.equals(text)) return text;
 
         StringBuilder sb = new StringBuilder(text);
         String placeholder = "{}";
@@ -268,7 +267,7 @@ public class I18nLoader {
      */
     public @NotNull net.kyori.adventure.text.Component toComponent(@NotNull String key, @NotNull net.kyori.adventure.text.minimessage.tag.resolver.TagResolver... tagResolvers) {
         String text = to(key);
-        if (text != key)
+        if (!text.equals(key))
             return net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(text, tagResolvers);
         return net.kyori.adventure.text.Component.text(key);
     }
