@@ -253,11 +253,11 @@ public class I18nLoader {
      * Converts the translation key into a {@link net.kyori.adventure.text.Component} using MiniMessage format.
      * <p>
      * For example:
-     * <pre>
+     * <pre>{@code
      * "Click <click:run_command:/help>here</click> for help" produces a clickable "here" text
      * "This is <red>red text</red>" produces text with red color
      * "Player: <player>" with player tag resolver shows player name
-     * </pre>
+     * }</pre>
      *
      * @param key          the translation key used to fetch the corresponding localized string
      * @param tagResolvers optional tag resolvers used to process placeholders or tags within the localized string
