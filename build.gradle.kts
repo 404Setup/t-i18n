@@ -66,7 +66,7 @@ mavenPublishing {
 
     pom {
         name.set("TI18N")
-        description.set("Basic Development Library")
+        description.set("Quick use, consistent behavior i18n wrapper.")
         inceptionYear.set("2025")
         url.set("https://github.com/404Setup/t-i18n")
         licenses {
