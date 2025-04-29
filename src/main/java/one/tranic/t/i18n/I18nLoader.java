@@ -36,7 +36,7 @@ public class I18nLoader {
         this(null, clazz, namespace, Locale.ENGLISH);
     }
 
-    public I18nLoader(@Nullable Class<?> clazz, @NotNull String namespace, @NotNull Locale locale) {
+    public I18nLoader(@NotNull Class<?> clazz, @NotNull String namespace, @NotNull Locale locale) {
         this(null, clazz, namespace, locale);
     }
 
