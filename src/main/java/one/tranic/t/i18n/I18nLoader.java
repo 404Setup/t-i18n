@@ -153,6 +153,37 @@ public class I18nLoader {
     }
 
     /**
+     * Replaces placeholders in a text template with corresponding values from the provided components.
+     *
+     * <p>
+     * For example:
+     * <pre>
+     * "{b1} items in {b2}" with args {"b1": "5", "b2", "cart"} produces "5 items in cart"
+     * "Hello {b1}" with arg {"b1", "world"} produces "Hello world"
+     * "Rate: {b1}" with arg {"b1", 0.12} produces "Rate: 0.12"
+     * </pre>
+     *
+     * @param key  the text template containing placeholders in the form of "{keyword}"
+     * @param args an array of {@link SimpleComponent} objects that provide the values for placeholders
+     * @return the updated text with placeholders replaced by their corresponding values;
+     * returns the original text if no placeholders match or if no components are provided
+     */
+    public @NotNull String toBrace(@NotNull String key, @NotNull SimpleComponent... args) {
+        String text = to(key);
+        if (args.length == 0 || key.equals(text)) return text;
+
+        StringBuilder sb = new StringBuilder(text);
+        for (SimpleComponent component : args) {
+            String placeholder = "{" + component.keyword() + "}";
+            int placeholderIndex;
+            while ((placeholderIndex = sb.indexOf(placeholder)) != -1) {
+                sb.replace(placeholderIndex, placeholderIndex + placeholder.length(), String.valueOf(component.value()));
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
      * Converts a localized string corresponding to the given key into an array of BaseComponent objects.
      *
      * @param key the translation key used to fetch the corresponding localized string
@@ -197,6 +228,26 @@ public class I18nLoader {
      * @return an array of {@link net.md_5.bungee.api.chat.BaseComponent} representing the processed localized string
      */
     public @NotNull net.md_5.bungee.api.chat.BaseComponent[] toBaseComponentBrace(@NotNull String key, @NotNull Object... args) {
+        return net.md_5.bungee.api.chat.TextComponent.fromLegacyText(toBrace(key, args));
+    }
+
+    /**
+     * Converts the provided key and arguments into an array of BaseComponent objects
+     * using a legacy text format with braces.
+     *
+     * <p>
+     * For example:
+     * <pre>
+     * "{b1} items in {b2}" with args {"b1": "5", "b2", "cart"} produces "5 items in cart"
+     * "Hello {b1}" with arg {"b1", "world"} produces "Hello world"
+     * "Rate: {b1}" with arg {"b1", 0.12} produces "Rate: 0.12"
+     * </pre>
+     *
+     * @param key  the key to be formatted, must not be null
+     * @param args the array of SimpleComponent arguments to format, must not be null
+     * @return an array of BaseComponent objects representing the formatted text
+     */
+    public @NotNull net.md_5.bungee.api.chat.BaseComponent[] toBaseComponentBrace(@NotNull String key, @NotNull SimpleComponent... args) {
         return net.md_5.bungee.api.chat.TextComponent.fromLegacyText(toBrace(key, args));
     }
 
@@ -250,6 +301,25 @@ public class I18nLoader {
     }
 
     /**
+     * Converts the given key and arguments into a formatted text component using braces for placeholders.
+     *
+     * <p>
+     * For example:
+     * <pre>
+     * "{b1} items in {b2}" with args {"b1": "5", "b2", "cart"} produces "5 items in cart"
+     * "Hello {b1}" with arg {"b1", "world"} produces "Hello world"
+     * "Rate: {b1}" with arg {"b1", 0.12} produces "Rate: 0.12"
+     * </pre>
+     *
+     * @param key  the key used as the base text for the component must not be null
+     * @param args the arguments to be placed into the placeholders within the text must not be null
+     * @return a Component instance representing the formatted text
+     */
+    public @NotNull net.kyori.adventure.text.Component toComponentBrace(@NotNull String key, @NotNull SimpleComponent... args) {
+        return net.kyori.adventure.text.Component.text(toBrace(key, args));
+    }
+
+    /**
      * Converts the translation key into a {@link net.kyori.adventure.text.Component} using MiniMessage format.
      * <p>
      * For example:
@@ -270,5 +340,8 @@ public class I18nLoader {
         if (!text.equals(key))
             return net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(text, tagResolvers);
         return net.kyori.adventure.text.Component.text(key);
+    }
+
+    public record SimpleComponent(@NotNull String keyword, @NotNull Object value) {
     }
 }
