@@ -3,6 +3,7 @@ package one.tranic.t.i18n;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
@@ -21,16 +22,27 @@ import java.util.Map;
 public class I18nLoader {
     private final Map<String, String> language;
     private final String namespace;
-    private final Class<?> clazz;
     Locale locale;
     I18n adaptar;
+    private @Nullable
+    Class<?> clazz;
+    private @Nullable File file;
 
-    public I18nLoader(@Nullable Class<?> clazz, @NotNull String namespace) {
-        this(clazz, namespace, Locale.ENGLISH);
+    public I18nLoader(@NotNull File file) {
+        this(file, null, "en", Locale.ENGLISH);
+    }
+
+    public I18nLoader(@NotNull Class<?> clazz, @NotNull String namespace) {
+        this(null, clazz, namespace, Locale.ENGLISH);
     }
 
     public I18nLoader(@Nullable Class<?> clazz, @NotNull String namespace, @NotNull Locale locale) {
-        this.clazz = clazz != null ? clazz : I18nLoader.class;
+        this(null, clazz, namespace, locale);
+    }
+
+    public I18nLoader(@Nullable File file, @Nullable Class<?> clazz, @NotNull String namespace, @NotNull Locale locale) {
+        this.file = file;
+        if (this.file == null) this.clazz = clazz;
         this.locale = locale;
         this.namespace = namespace;
         this.language = new HashMap<>();
@@ -43,12 +55,26 @@ public class I18nLoader {
         if (size < 15)
             sb.append("language=").append(language).append(", ");
         sb.append("languageSize=").append(size)
-                .append(", namespace='").append(namespace).append('\'')
-                .append(", clazz=").append(clazz)
-                .append(", locale=").append(locale.getLanguage())
+                .append(", namespace='").append(namespace).append('\'');
+        if (clazz != null)
+            sb.append(", class=").append(clazz);
+        if (file != null)
+            sb.append(", file='").append(file).append('\'');
+        sb.append(", locale=").append(locale.getLanguage())
                 .append(", adaptar=").append(adaptar)
                 .append('}');
         return sb.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        int result = language != null ? language.hashCode() : 0;
+        result = 31 * result + namespace.hashCode();
+        if (file != null) result = 31 * result + file.hashCode();
+        if (clazz != null) result = 31 * result + clazz.hashCode();
+        result = 31 * result + (locale != null ? locale.hashCode() : 0);
+        result = 31 * result + (adaptar != null ? adaptar.hashCode() : 0);
+        return result;
     }
 
     /**
@@ -59,6 +85,7 @@ public class I18nLoader {
     public void reset(@Nullable Locale locale) {
         if (language != null) language.clear();
         this.locale = locale;
+        this.file = null;
     }
 
     /**
@@ -68,6 +95,27 @@ public class I18nLoader {
      */
     public void setLanguage(@NotNull Locale locale) {
         this.locale = locale;
+    }
+
+    /**
+     * Sets the file to be used and resets the associated class to null.
+     *
+     * @param file the File object to be set; must not be null
+     */
+    public void setFile(@NotNull File file) {
+        this.file = file;
+        this.clazz = null;
+    }
+
+    /**
+     * Sets the class to be associated with this instance.
+     * This method also resets the file associated with the instance to null.
+     *
+     * @param clazz the class to set; must not be null
+     */
+    public void setClazz(@NotNull Class<?> clazz) {
+        this.clazz = clazz;
+        this.file = null;
     }
 
     /**
@@ -85,7 +133,7 @@ public class I18nLoader {
      * @throws IOException if an I/O error occurs during loading of the localized strings.
      */
     public void update() throws IOException {
-        var lang = adaptar.load(clazz, namespace, locale);
+        var lang = adaptar.load(file, clazz, namespace, locale);
         language.clear();
         language.putAll(lang);
     }

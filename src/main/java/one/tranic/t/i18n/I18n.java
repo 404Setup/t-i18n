@@ -8,9 +8,7 @@ import org.w3c.dom.NodeList;
 import javax.annotation.Nullable;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +41,7 @@ public enum I18n {
             }
 
             @Override
-            protected Map<String, String> parseInputStream(InputStream inputStream) throws IOException {
+            protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) throws IOException {
                 org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
                 Map<String, Object> yamlMap = yaml.load(inputStream);
                 Map<String, String> result = new HashMap<>();
@@ -59,8 +57,8 @@ public enum I18n {
 
         @Override
         @NotNull
-        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            return resourceLoader.load(clazz, namespace, locale);
+        Map<String, String> load(File file, Class<?> clazz, String namespace, Locale locale) throws IOException {
+            return resourceLoader.load(file, clazz, namespace, locale);
         }
     },
     /**
@@ -83,7 +81,7 @@ public enum I18n {
             }
 
             @Override
-            protected Map<String, String> parseInputStream(InputStream inputStream) throws IOException {
+            protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) throws IOException {
                 InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
                 com.google.gson.reflect.TypeToken<Map<String, String>> typeToken =
                         new com.google.gson.reflect.TypeToken<>() {
@@ -102,8 +100,8 @@ public enum I18n {
 
         @Override
         @NotNull
-        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            return resourceLoader.load(clazz, namespace, locale);
+        Map<String, String> load(File file, Class<?> clazz, String namespace, Locale locale) throws IOException {
+            return resourceLoader.load(file, clazz, namespace, locale);
         }
     },
     /**
@@ -122,7 +120,7 @@ public enum I18n {
             }
 
             @Override
-            protected Map<String, String> parseInputStream(InputStream inputStream) throws IOException {
+            protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) throws IOException {
                 Properties properties = new Properties();
                 properties.load(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
                 Map<String, String> result = new HashMap<>();
@@ -140,8 +138,8 @@ public enum I18n {
 
         @Override
         @NotNull
-        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            return resourceLoader.load(clazz, namespace, locale);
+        Map<String, String> load(File file, Class<?> clazz, String namespace, Locale locale) throws IOException {
+            return resourceLoader.load(file, clazz, namespace, locale);
         }
     },
     /**
@@ -171,7 +169,7 @@ public enum I18n {
             }
 
             @Override
-            protected Map<String, String> parseInputStream(InputStream inputStream) throws IOException {
+            protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) throws IOException {
                 Map<String, String> result = new HashMap<>();
                 try {
                     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -252,8 +250,8 @@ public enum I18n {
 
         @Override
         @NotNull
-        Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
-            return resourceLoader.load(clazz, namespace, locale);
+        Map<String, String> load(@Nullable File file, @Nullable Class<?> clazz, @NotNull String namespace, @Nullable Locale locale) throws IOException {
+            return resourceLoader.load(file, clazz, namespace, locale);
         }
     };
 
@@ -291,7 +289,7 @@ public enum I18n {
         }
     }
 
-    abstract @NotNull Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException;
+    abstract @NotNull Map<String, String> load(File file, Class<?> clazz, String namespace, Locale locale) throws IOException;
 
     private abstract static class ResourceLoader {
         protected abstract String getFileExtension();
@@ -302,9 +300,23 @@ public enum I18n {
 
         protected abstract String getFormatName();
 
-        protected abstract Map<String, String> parseInputStream(InputStream inputStream) throws IOException;
+        protected abstract Map<String, String> parseInputStream(@NotNull InputStream inputStream) throws IOException;
 
-        public Map<String, String> load(Class<?> clazz, String namespace, Locale locale) throws IOException {
+        public Map<String, String> load(@Nullable File file, @Nullable Class<?> clazz, @NotNull String namespace, @Nullable Locale locale) throws IOException {
+            if (file != null) {
+                try (InputStream is = new FileInputStream(file)) {
+                    return parseInputStream(is);
+                } catch (IOException e) {
+                    throw new IOException("Failed to load " + getFormatName() + " file for "
+                            + file + " in " + locale, e);
+                }
+            }
+
+            if (clazz == null)
+                throw new IOException("Failed to load " + getFormatName() + " file for "
+                        + namespace + " in " + locale + ": class is null");
+            if (locale == null) locale = Locale.getDefault();
+
             String basePath = getBasePath(namespace, locale);
 
             InputStream inputStream = getResource(clazz, basePath + getFileExtension());
