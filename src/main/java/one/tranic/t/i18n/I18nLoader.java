@@ -20,32 +20,39 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public class I18nLoader {
-    private final Map<String, String> language;
-    private final String namespace;
-    Locale locale;
-    I18n adaptar;
+    private @NotNull
+    final Map<String, String> language;
     private @Nullable
-    Class<?> clazz;
+    final String namespace;
+    private @Nullable Locale locale;
+    private @NotNull I18n adaptar;
+    private @Nullable Class<?> clazz;
     private @Nullable File file;
 
-    public I18nLoader(@NotNull File file) {
-        this(file, null, "en", Locale.ENGLISH);
+    public I18nLoader(@NotNull File file, @NotNull I18n adaptar) {
+        this(file, null, null, null, adaptar);
     }
 
-    public I18nLoader(@NotNull Class<?> clazz, @NotNull String namespace) {
-        this(null, clazz, namespace, Locale.ENGLISH);
+    public I18nLoader(@NotNull Class<?> clazz, @NotNull String namespace, @NotNull I18n adaptar) throws IllegalArgumentException {
+        this(null, clazz, namespace, Locale.ENGLISH, adaptar);
     }
 
-    public I18nLoader(@NotNull Class<?> clazz, @NotNull String namespace, @NotNull Locale locale) {
-        this(null, clazz, namespace, locale);
+    public I18nLoader(@NotNull Class<?> clazz, @NotNull String namespace, @NotNull Locale locale, @NotNull I18n adaptar) throws IllegalArgumentException {
+        this(null, clazz, namespace, locale, adaptar);
     }
 
-    public I18nLoader(@Nullable File file, @Nullable Class<?> clazz, @NotNull String namespace, @NotNull Locale locale) {
+    public I18nLoader(@Nullable File file, @Nullable Class<?> clazz, @Nullable String namespace, @Nullable Locale locale, @NotNull I18n adaptar) throws IllegalArgumentException {
         this.file = file;
         if (this.file == null) this.clazz = clazz;
         this.locale = locale;
         this.namespace = namespace;
+
+        if (this.clazz == null && (this.namespace == null || this.locale == null)) {
+            throw new IllegalArgumentException("Either file or class and namespace and locale must be provided");
+        }
+
         this.language = new HashMap<>();
+        this.adaptar = adaptar;
     }
 
     @Override
@@ -54,26 +61,27 @@ public class I18nLoader {
         int size = language.size();
         if (size < 15)
             sb.append("language=").append(language).append(", ");
-        sb.append("languageSize=").append(size)
-                .append(", namespace='").append(namespace).append('\'');
+        sb.append("languageSize=").append(size);
+        if (namespace != null)
+            sb.append(", namespace='").append(namespace).append('\'');
         if (clazz != null)
             sb.append(", class=").append(clazz);
         if (file != null)
             sb.append(", file='").append(file).append('\'');
-        sb.append(", locale=").append(locale.getLanguage())
-                .append(", adaptar=").append(adaptar)
-                .append('}');
+        if (locale != null)
+            sb.append(", locale=").append(locale.getLanguage());
+        sb.append(", adaptar=").append(adaptar).append('}');
         return sb.toString();
     }
 
     @Override
     public int hashCode() {
-        int result = language != null ? language.hashCode() : 0;
-        result = 31 * result + namespace.hashCode();
-        if (file != null) result = 31 * result + file.hashCode();
-        if (clazz != null) result = 31 * result + clazz.hashCode();
+        int result = language.hashCode();
+        result = 31 * result + (namespace != null && !namespace.isBlank() ? namespace.hashCode() : 0);
+        result = 31 * result + (file != null ? file.hashCode() : 0);
+        result = 31 * result + (clazz != null ? clazz.hashCode() : 0);
         result = 31 * result + (locale != null ? locale.hashCode() : 0);
-        result = 31 * result + (adaptar != null ? adaptar.hashCode() : 0);
+        result = 31 * result + adaptar.hashCode();
         return result;
     }
 
@@ -83,9 +91,18 @@ public class I18nLoader {
      * @param locale the Locale to be set; it can be null to indicate no specific locale
      */
     public void reset(@Nullable Locale locale) {
-        if (language != null) language.clear();
+        language.clear();
         this.locale = locale;
         this.file = null;
+    }
+
+    /**
+     * Retrieves the current language setting as a Locale object.
+     *
+     * @return the Locale object representing the current language setting, or null if no language is set.
+     */
+    public @Nullable Locale getLanguage() {
+        return locale;
     }
 
     /**
@@ -95,6 +112,15 @@ public class I18nLoader {
      */
     public void setLanguage(@NotNull Locale locale) {
         this.locale = locale;
+    }
+
+    /**
+     * Retrieves the file associated with this instance.
+     *
+     * @return the file if available, or null if no file is set
+     */
+    public @Nullable File getFile() {
+        return file;
     }
 
     /**
@@ -108,14 +134,32 @@ public class I18nLoader {
     }
 
     /**
+     * Retrieves the class type stored within this instance.
+     *
+     * @return the Class object representing the type if available, or null if no type is set.
+     */
+    public @Nullable Class<?> getClazz() {
+        return clazz;
+    }
+
+    /**
      * Sets the class to be associated with this instance.
-     * This method also resets the file associated with the instance to null.
+     * This method also resets the file associated with the instance with null.
      *
      * @param clazz the class to set; must not be null
      */
     public void setClazz(@NotNull Class<?> clazz) {
         this.clazz = clazz;
         this.file = null;
+    }
+
+    /**
+     * Retrieves the I18n adapter instance.
+     *
+     * @return the I18n adapter instance, never null
+     */
+    public @NotNull I18n getAdaptar() {
+        return adaptar;
     }
 
     /**
