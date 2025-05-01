@@ -1,17 +1,18 @@
 package one.tranic.t.i18n;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import javax.annotation.Nullable;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -41,7 +42,7 @@ public enum I18n {
             }
 
             @Override
-            protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) throws IOException {
+            protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) {
                 org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
                 Map<String, Object> yamlMap = yaml.load(inputStream);
                 Map<String, String> result = new HashMap<>();
@@ -56,9 +57,8 @@ public enum I18n {
         };
 
         @Override
-        @NotNull
-        Map<String, String> load(File file, Class<?> clazz, String namespace, Locale locale) throws IOException {
-            return resourceLoader.load(file, clazz, namespace, locale);
+        protected @NotNull ResourceLoader getResourceLoader() {
+            return resourceLoader;
         }
     },
     /**
@@ -72,16 +72,16 @@ public enum I18n {
      * }</pre>
      */
     GSON {
-        private final com.google.gson.Gson gson = new com.google.gson.Gson();
-
         private final ResourceLoader resourceLoader = new ResourceLoader() {
+            private final com.google.gson.Gson gson = new com.google.gson.Gson();
+
             @Override
             protected String getFileExtension() {
                 return ".json";
             }
 
             @Override
-            protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) throws IOException {
+            protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) {
                 InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
                 com.google.gson.reflect.TypeToken<Map<String, String>> typeToken =
                         new com.google.gson.reflect.TypeToken<>() {
@@ -99,9 +99,8 @@ public enum I18n {
         };
 
         @Override
-        @NotNull
-        Map<String, String> load(File file, Class<?> clazz, String namespace, Locale locale) throws IOException {
-            return resourceLoader.load(file, clazz, namespace, locale);
+        protected @NotNull ResourceLoader getResourceLoader() {
+            return resourceLoader;
         }
     },
     /**
@@ -137,9 +136,8 @@ public enum I18n {
         };
 
         @Override
-        @NotNull
-        Map<String, String> load(File file, Class<?> clazz, String namespace, Locale locale) throws IOException {
-            return resourceLoader.load(file, clazz, namespace, locale);
+        protected @NotNull ResourceLoader getResourceLoader() {
+            return resourceLoader;
         }
     },
     /**
@@ -249,9 +247,8 @@ public enum I18n {
         };
 
         @Override
-        @NotNull
-        Map<String, String> load(@Nullable File file, @Nullable Class<?> clazz, @NotNull String namespace, @Nullable Locale locale) throws IOException {
-            return resourceLoader.load(file, clazz, namespace, locale);
+        protected @NotNull ResourceLoader getResourceLoader() {
+            return resourceLoader;
         }
     };
 
@@ -289,9 +286,27 @@ public enum I18n {
         }
     }
 
-    abstract @NotNull Map<String, String> load(File file, Class<?> clazz, String namespace, Locale locale) throws IOException;
+    abstract @NotNull ResourceLoader getResourceLoader();
+
+    @NotNull Map<String, String> load(@NotNull InputStream inputStream) throws IOException {
+        return getResourceLoader().load(inputStream);
+    }
+
+    @NotNull Map<String, String> load(@NotNull File file) throws IOException {
+        return getResourceLoader().load(file);
+    }
+
+    @NotNull Map<String, String> load(@NotNull Path path, @NotNull Locale locale) throws IOException, IllegalArgumentException {
+        return getResourceLoader().load(path, locale);
+    }
+
+    @NotNull Map<String, String> load(@NotNull Class<?> clazz, @NotNull String namespace, @NotNull Locale locale) throws IOException, IllegalArgumentException {
+        return getResourceLoader().load(clazz, namespace, locale);
+    }
 
     private abstract static class ResourceLoader {
+        private static final boolean DEBUG = Boolean.getBoolean("tranic.i18n.debug");
+
         protected abstract String getFileExtension();
 
         protected String getAlternativeFileExtension() {
@@ -302,19 +317,63 @@ public enum I18n {
 
         protected abstract Map<String, String> parseInputStream(@NotNull InputStream inputStream) throws IOException;
 
-        public Map<String, String> load(@Nullable File file, @Nullable Class<?> clazz, @NotNull String namespace, @Nullable Locale locale) throws IOException {
-            if (file != null) {
-                try (InputStream is = new FileInputStream(file)) {
-                    return parseInputStream(is);
-                } catch (IOException e) {
-                    throw new IOException("Failed to load " + getFormatName() + " file for "
-                            + file + " in " + locale, e);
+        @SuppressWarnings("ConstantConditions")
+        protected Map<String, String> load(@NotNull InputStream inputStream) throws IOException {
+            if (inputStream == null)
+                throw new IOException("Failed to load " + getFormatName() + " file: input stream is null");
+
+            return parseInputStream(inputStream);
+        }
+
+        @SuppressWarnings("ConstantConditions")
+        public Map<String, String> load(@NotNull File file) throws IOException {
+            if (file == null)
+                throw new IOException("Failed to load " + getFormatName() + " file: file is null");
+            if (!file.exists())
+                throw new IOException("Failed to load " + getFormatName() + " file: file does not exist");
+            if (!file.isFile())
+                throw new IOException("Failed to load " + getFormatName() + " file: file is not a file");
+            if (!file.canRead())
+                throw new IOException("Failed to load " + getFormatName() + " file: file is not readable");
+            try (InputStream is = new FileInputStream(file)) {
+                return parseInputStream(is);
+            } catch (IOException e) {
+                throw new IOException("Failed to load " + getFormatName() + " file for "
+                        + file, e);
+            }
+        }
+
+        @SuppressWarnings("ConstantConditions")
+        public Map<String, String> load(@NotNull Path path, @NotNull Locale locale) throws IOException, IllegalArgumentException {
+            if (path == null) throw new IllegalArgumentException("Path must not be null");
+            if (locale == null) locale = Locale.getDefault();
+
+            var file = path.resolve(locale + getFileExtension()).toFile();
+            if (!file.exists()) {
+                String alternativeExt = getAlternativeFileExtension();
+                if (alternativeExt != null) {
+                    file = path.resolve(locale + getAlternativeFileExtension()).toFile();
+                    if (!file.exists())
+                        throw new IOException("Failed to load " + getFormatName() + " file for "
+                                + path + " in " + locale);
                 }
             }
 
+            try (InputStream is = new FileInputStream(file)) {
+                return parseInputStream(is);
+            } catch (IOException e) {
+                throw new IOException("Failed to load " + getFormatName() + " file for "
+                        + file, e);
+            }
+        }
+
+        @SuppressWarnings("ConstantConditions")
+        public Map<String, String> load(@NotNull Class<?> clazz, @NotNull String namespace, @NotNull Locale locale) throws IOException, IllegalArgumentException {
             if (clazz == null)
                 throw new IOException("Failed to load " + getFormatName() + " file for "
                         + namespace + " in " + locale + ": class is null");
+            if (namespace == null)
+                throw new IllegalArgumentException("Namespace must not be null when loading from a class");
             if (locale == null) locale = Locale.getDefault();
 
             String basePath = getBasePath(namespace, locale);

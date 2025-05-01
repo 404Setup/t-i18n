@@ -1,10 +1,13 @@
 package one.tranic.t.i18n;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -20,38 +23,62 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public class I18nLoader {
-    private @NotNull
-    final Map<String, String> language;
-    private @Nullable
-    final String namespace;
+    private final @NotNull Map<String, String> language;
+    private final @Nullable String namespace;
+    private final @Nullable Path path;
+    private final boolean v1;
+    private final @Nullable File file;
+    private final @NotNull I18n adaptar;
+    private final @Nullable Class<?> clazz;
     private @Nullable Locale locale;
-    private @NotNull I18n adaptar;
-    private @Nullable Class<?> clazz;
-    private @Nullable File file;
 
     public I18nLoader(@NotNull File file, @NotNull I18n adaptar) {
-        this(file, null, null, null, adaptar);
+        this(file, null, null, null, null, adaptar);
+    }
+
+    public I18nLoader(@NotNull String namespace, @NotNull I18n adaptar) throws IllegalArgumentException {
+        this(null, null, null, namespace, null, adaptar);
+    }
+
+    public I18nLoader(@NotNull Path path, @NotNull I18n adaptar) throws IllegalArgumentException {
+        this(null, path, null, null, null, adaptar);
     }
 
     public I18nLoader(@NotNull Class<?> clazz, @NotNull String namespace, @NotNull I18n adaptar) throws IllegalArgumentException {
-        this(null, clazz, namespace, Locale.ENGLISH, adaptar);
+        this(null, null, clazz, namespace, Locale.ENGLISH, adaptar);
     }
 
     public I18nLoader(@NotNull Class<?> clazz, @NotNull String namespace, @NotNull Locale locale, @NotNull I18n adaptar) throws IllegalArgumentException {
-        this(null, clazz, namespace, locale, adaptar);
+        this(null, null, clazz, namespace, locale, adaptar);
     }
 
-    public I18nLoader(@Nullable File file, @Nullable Class<?> clazz, @Nullable String namespace, @Nullable Locale locale, @NotNull I18n adaptar) throws IllegalArgumentException {
+    public I18nLoader(@Nullable File file, @Nullable Path path, @Nullable Class<?> clazz, @Nullable String namespace, @Nullable Locale locale, @NotNull I18n adaptar) throws IllegalArgumentException {
         this.file = file;
-        if (this.file == null) this.clazz = clazz;
-        this.locale = locale;
+        this.clazz = file == null ? clazz : null;
+        this.locale = locale == null ? Locale.ENGLISH : locale;
         this.namespace = namespace;
 
-        if (this.clazz == null && (this.namespace == null || this.locale == null)) {
-            throw new IllegalArgumentException("Either file or class and namespace and locale must be provided");
+        if (this.clazz != null && this.namespace == null) {
+            throw new IllegalArgumentException("Namespace must not be null when loading from a class");
         }
 
-        this.language = new HashMap<>();
+        if (this.clazz == null && this.namespace != null) {
+            this.path = Path.of(this.namespace);
+            if (!Files.exists(this.path)) {
+                throw new IllegalArgumentException("Namespace does not exist: " + this.namespace);
+            }
+        } else {
+            this.path = path;
+        }
+
+        boolean v2 = false;
+        try {
+            Class.forName("one.tranic.t.utils.Collections");
+            v2 = true;
+        } catch (Exception ignored) {
+        }
+        v1 = v2;
+        this.language = v1 ? one.tranic.t.utils.Collections.newHashMap() : new HashMap<>();
         this.adaptar = adaptar;
     }
 
@@ -93,7 +120,68 @@ public class I18nLoader {
     public void reset(@Nullable Locale locale) {
         language.clear();
         this.locale = locale;
-        this.file = null;
+    }
+
+    /**
+     * Resets the current state of the object to its default configuration
+     * using the predefined locale.
+     */
+    public void reset() {
+        this.reset(this.locale);
+    }
+
+    /**
+     * Updates the internal language map with the default behavior.
+     *
+     * @throws IOException if an I/O error occurs during loading of the localized strings.
+     */
+    @SuppressWarnings("ConstantConditions")
+    public void update() throws IOException {
+        this.update(this.locale);
+    }
+
+    /**
+     * Updates the internal language map based on the provided locale.
+     *
+     * @param locale the locale to be used for loading the language map. Must not be null.
+     * @throws IOException if no valid configuration is available for loading the language map,
+     *                     or if an I/O error occurs during the loading process.
+     */
+    public void update(@NotNull Locale locale) throws IOException {
+        this.locale = locale;
+        Map<String, String> lang;
+        if (this.file != null) {
+            lang = this.adaptar.load(this.file);
+        } else if (this.path != null) {
+            lang = this.adaptar.load(this.path, locale);
+        } else if (this.clazz != null && this.namespace != null) {
+            lang = this.adaptar.load(this.clazz, this.namespace, locale);
+        } else {
+            throw new IOException("Invalid configuration for loading language map");
+        }
+        this.language.clear();
+        this.language.putAll(lang);
+    }
+
+    /**
+     * Updates the current language map using the data from the provided input stream.
+     *
+     * @param customInputStream the input stream containing the new language data; must not be null
+     * @throws IOException if an I/O error occurs during the loading of data from the input stream
+     */
+    public void update(@NotNull InputStream customInputStream) throws IOException {
+        var lang = this.adaptar.load(customInputStream);
+        this.language.clear();
+        this.language.putAll(lang);
+    }
+
+    /**
+     * Return a copy of the language map
+     *
+     * @return a non-null copy of the language map
+     */
+    public @NotNull Map<String, String> getLanguageMap() {
+        return v1 ? one.tranic.t.utils.Collections.newHashMap(language) : new HashMap<>(language);
     }
 
     /**
@@ -112,74 +200,6 @@ public class I18nLoader {
      */
     public void setLanguage(@NotNull Locale locale) {
         this.locale = locale;
-    }
-
-    /**
-     * Retrieves the file associated with this instance.
-     *
-     * @return the file if available, or null if no file is set
-     */
-    public @Nullable File getFile() {
-        return file;
-    }
-
-    /**
-     * Sets the file to be used and resets the associated class to null.
-     *
-     * @param file the File object to be set; must not be null
-     */
-    public void setFile(@NotNull File file) {
-        this.file = file;
-        this.clazz = null;
-    }
-
-    /**
-     * Retrieves the class type stored within this instance.
-     *
-     * @return the Class object representing the type if available, or null if no type is set.
-     */
-    public @Nullable Class<?> getClazz() {
-        return clazz;
-    }
-
-    /**
-     * Sets the class to be associated with this instance.
-     * This method also resets the file associated with the instance with null.
-     *
-     * @param clazz the class to set; must not be null
-     */
-    public void setClazz(@NotNull Class<?> clazz) {
-        this.clazz = clazz;
-        this.file = null;
-    }
-
-    /**
-     * Retrieves the I18n adapter instance.
-     *
-     * @return the I18n adapter instance, never null
-     */
-    public @NotNull I18n getAdaptar() {
-        return adaptar;
-    }
-
-    /**
-     * Sets the adapter used for this instance.
-     *
-     * @param adaptar the adapter to be assigned must not be null
-     */
-    public void setAdaptar(@NotNull I18n adaptar) {
-        this.adaptar = adaptar;
-    }
-
-    /**
-     * Updates the internal language map with localized strings for the specified class, namespace, and locale.
-     *
-     * @throws IOException if an I/O error occurs during loading of the localized strings.
-     */
-    public void update() throws IOException {
-        var lang = adaptar.load(file, clazz, namespace, locale);
-        language.clear();
-        language.putAll(lang);
     }
 
     /**
@@ -209,7 +229,9 @@ public class I18nLoader {
      * @return the formatted translated string
      */
     public @NotNull String to(@NotNull String key, @NotNull Object... args) {
-        return String.format(to(key), args);
+        var text = to(key);
+        if (args.length == 0 || key.equals(text)) return text;
+        return String.format(text, args);
     }
 
     /**
