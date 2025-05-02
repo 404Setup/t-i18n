@@ -23,10 +23,21 @@ import java.util.Map;
  */
 @SuppressWarnings("unused")
 public class I18nLoader {
+    private static final boolean v1;
+
+    static {
+        boolean v2 = false;
+        try {
+            Class.forName("one.tranic.t.utils.Collections");
+            v2 = true;
+        } catch (Exception ignored) {
+        }
+        v1 = v2;
+    }
+
     private final @NotNull Map<String, String> language;
     private final @Nullable String namespace;
     private final @Nullable Path path;
-    private final boolean v1;
     private final @Nullable File file;
     private final @NotNull I18n adaptar;
     private final @Nullable Class<?> clazz;
@@ -71,15 +82,12 @@ public class I18nLoader {
             this.path = path;
         }
 
-        boolean v2 = false;
-        try {
-            Class.forName("one.tranic.t.utils.Collections");
-            v2 = true;
-        } catch (Exception ignored) {
-        }
-        v1 = v2;
-        this.language = v1 ? one.tranic.t.utils.Collections.newHashMap() : new HashMap<>();
+        this.language = createMap();
         this.adaptar = adaptar;
+    }
+
+    public static <K, V> Map<K, V> createMap() {
+        return v1 ? one.tranic.t.utils.Collections.newHashMap() : new HashMap<>();
     }
 
     @Override

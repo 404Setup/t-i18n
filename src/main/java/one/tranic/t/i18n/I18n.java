@@ -13,7 +13,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -45,7 +44,7 @@ public enum I18n {
             protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) {
                 org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
                 Map<String, Object> yamlMap = yaml.load(inputStream);
-                Map<String, String> result = new HashMap<>();
+                Map<String, String> result = I18nLoader.createMap();
                 flattenYaml(yamlMap, "", result);
                 return result;
             }
@@ -87,7 +86,7 @@ public enum I18n {
                         new com.google.gson.reflect.TypeToken<>() {
                         };
                 Map<String, String> jsonMap = gson.fromJson(reader, typeToken.getType());
-                Map<String, String> result = new HashMap<>();
+                Map<String, String> result = I18nLoader.createMap();
                 if (jsonMap != null) result.putAll(jsonMap);
                 return result;
             }
@@ -122,7 +121,7 @@ public enum I18n {
             protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) throws IOException {
                 Properties properties = new Properties();
                 properties.load(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-                Map<String, String> result = new HashMap<>();
+                Map<String, String> result = I18nLoader.createMap();
                 for (String key : properties.stringPropertyNames()) {
                     result.put(key, properties.getProperty(key));
                 }
@@ -168,7 +167,7 @@ public enum I18n {
 
             @Override
             protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) throws IOException {
-                Map<String, String> result = new HashMap<>();
+                Map<String, String> result = I18nLoader.createMap();
                 try {
                     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                     DocumentBuilder builder = factory.newDocumentBuilder();
