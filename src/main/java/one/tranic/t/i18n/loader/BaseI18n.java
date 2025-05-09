@@ -1,5 +1,6 @@
-package one.tranic.t.i18n;
+package one.tranic.t.i18n.loader;
 
+import one.tranic.t.i18n.BaseLoader;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -15,90 +16,6 @@ import java.util.Map;
 import java.util.Properties;
 
 public enum BaseI18n implements I18n {
-    /**
-     * Example Yaml:
-     * <pre>{@code
-     * goldpiglin.test1: Goldpiglin test
-     * goldpiglin.boost: boost test
-     * goldpiglin
-     *      boost:
-     *          xyz: Goldpiglin xyzzz
-     * }</pre>
-     */
-    SnakeYAML {
-        private final ResourceLoader resourceLoader = new ResourceLoader() {
-            @Override
-            protected String getFileExtension() {
-                return ".yml";
-            }
-
-            @Override
-            protected String getAlternativeFileExtension() {
-                return ".yaml";
-            }
-
-            @Override
-            protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) {
-                org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml();
-                Map<String, Object> yamlMap = yaml.load(inputStream);
-                Map<String, String> result = I18nLoader.createMap();
-                I18n.flattenYaml(yamlMap, "", result);
-                return result;
-            }
-
-            @Override
-            protected String getFormatName() {
-                return "YAML";
-            }
-        };
-
-        @Override
-        public @NotNull ResourceLoader getResourceLoader() {
-            return resourceLoader;
-        }
-    },
-    /**
-     * Example Json:
-     * <pre>{@code
-     * {
-     *     "goldpiglin.test1": "Goldpiglin test",
-     *     "goldpiglin.boost": "boost test",
-     *     "goldpiglin.boost.xyz": "Goldpiglin xyzzz"
-     * }
-     * }</pre>
-     */
-    GSON {
-        private final ResourceLoader resourceLoader = new ResourceLoader() {
-            private final com.google.gson.Gson gson = new com.google.gson.Gson();
-
-            @Override
-            protected String getFileExtension() {
-                return ".json";
-            }
-
-            @Override
-            protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) {
-                InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-                com.google.gson.reflect.TypeToken<Map<String, String>> typeToken =
-                        new com.google.gson.reflect.TypeToken<>() {
-                        };
-                Map<String, String> jsonMap = gson.fromJson(reader, typeToken.getType());
-                Map<String, String> result = I18nLoader.createMap();
-                if (jsonMap != null) result.putAll(jsonMap);
-                return result;
-            }
-
-            @Override
-            protected String getFormatName() {
-                return "JSON";
-            }
-        };
-
-        @Override
-        public @NotNull ResourceLoader getResourceLoader() {
-            return resourceLoader;
-        }
-    },
     /**
      * Example Properties:
      * <pre>{@code
@@ -118,7 +35,7 @@ public enum BaseI18n implements I18n {
             protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) throws IOException {
                 Properties properties = new Properties();
                 properties.load(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-                Map<String, String> result = I18nLoader.createMap();
+                Map<String, String> result = BaseLoader.createMap();
                 for (String key : properties.stringPropertyNames()) {
                     result.put(key, properties.getProperty(key));
                 }
@@ -164,7 +81,7 @@ public enum BaseI18n implements I18n {
 
             @Override
             protected Map<String, String> parseInputStream(@NotNull InputStream inputStream) throws IOException {
-                Map<String, String> result = I18nLoader.createMap();
+                Map<String, String> result = BaseLoader.createMap();
                 try {
                     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                     DocumentBuilder builder = factory.newDocumentBuilder();

@@ -1,4 +1,4 @@
-package one.tranic.t.i18n;
+package one.tranic.t.i18n.loader;
 
 import org.jetbrains.annotations.NotNull;
 

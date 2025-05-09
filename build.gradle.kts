@@ -27,7 +27,7 @@ dependencies {
     compileOnly("org.yaml:snakeyaml:2.4")
     compileOnly("com.google.code.gson:gson:2.13.0")
 
-    compileOnly("one.tranic:t-utils:1.2.3")
+    compileOnly("one.tranic:t-utils:1.3.0")
 
     compileOnly("org.jetbrains:annotations:24.1.0")
 }
