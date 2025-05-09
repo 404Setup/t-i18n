@@ -21,8 +21,8 @@ repositories {
 dependencies {
     compileOnly("org.spigotmc:spigot-api:1.20.1-R0.1-SNAPSHOT")
     compileOnly("net.md-5:bungeecord-api:1.18-R0.1-SNAPSHOT")
-    compileOnly("net.kyori:adventure-api:4.20.0")
-    compileOnly("net.kyori:adventure-text-minimessage:4.20.0")
+    compileOnly("net.kyori:adventure-api:4.21.0")
+    compileOnly("net.kyori:adventure-text-minimessage:4.21.0")
 
     compileOnly("org.yaml:snakeyaml:2.4")
     compileOnly("com.google.code.gson:gson:2.13.0")
